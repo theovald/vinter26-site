@@ -38,7 +38,7 @@
 
   async function loadImages(key) {
     const byName = new Map();
-    for (const img of document.querySelectorAll("img[data-enc]")) {
+    for (const img of document.querySelectorAll("img[data-enc], video[data-enc]")) {
       const list = byName.get(img.dataset.enc) || [];
       list.push(img);
       byName.set(img.dataset.enc, list);
@@ -50,8 +50,14 @@
         try {
           const res = await fetch(`d/${name}.bin`);
           const plain = await unseal(key, new Uint8Array(await res.arrayBuffer()));
-          const url = URL.createObjectURL(new Blob([plain], { type: "image/jpeg" }));
-          for (const img of imgs) img.src = url;
+          const type = imgs[0].tagName === "VIDEO" ? "video/mp4" : "image/jpeg";
+          const url = URL.createObjectURL(new Blob([plain], { type }));
+          for (const img of imgs) {
+            img.src = url;
+            if (img.tagName === "VIDEO" && img.closest(".slide.active")) {
+              img.play().catch(() => {});
+            }
+          }
         } catch {}
       }
     }
